@@ -1,10 +1,25 @@
 import { CalendarDays, CheckCircle2, Clock, Hash, Users, X } from "lucide-react";
 import { Button } from "../common/Button";
 
-export function ReservationConfirmationModal({ reservation, onNewReservation, onViewReservations }) {
+export function ReservationConfirmationModal({
+  reservation,
+  title = "Reserva confirmada!",
+  message = "Sua mesa foi reservada com sucesso.",
+  primaryActionLabel = "Ver minhas reservas",
+  onPrimaryAction,
+  secondaryActionLabel = "Fazer nova reserva",
+  onSecondaryAction,
+  onNewReservation,
+  onViewReservations,
+  onClose,
+}) {
   if (!reservation) {
     return null;
   }
+
+  const handlePrimaryAction = onPrimaryAction || onViewReservations;
+  const handleSecondaryAction = onSecondaryAction || onNewReservation;
+  const handleClose = onClose || handleSecondaryAction || handlePrimaryAction;
 
   const details = [
     ["ID da reserva", `#${String(reservation.id).padStart(2, "0")}`, Hash],
@@ -29,15 +44,15 @@ export function ReservationConfirmationModal({ reservation, onNewReservation, on
             </span>
             <div>
               <h2 className="text-2xl font-bold text-ink-900" id="reservation-confirmation-title">
-                Reserva confirmada!
+                {title}
               </h2>
-              <p className="mt-1 text-sm text-ink-500">Sua mesa foi reservada com sucesso.</p>
+              <p className="mt-1 text-sm text-ink-500">{message}</p>
             </div>
           </div>
           <button
             aria-label="Fechar confirmacao"
             className="focus-ring rounded-lg p-2 text-ink-500 hover:bg-slate-100"
-            onClick={onNewReservation}
+            onClick={handleClose}
             type="button"
           >
             <X size={20} />
@@ -57,11 +72,11 @@ export function ReservationConfirmationModal({ reservation, onNewReservation, on
         </dl>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Button className="w-full" onClick={onViewReservations}>
-            Ver minhas reservas
+          <Button className="w-full" onClick={handlePrimaryAction}>
+            {primaryActionLabel}
           </Button>
-          <Button className="w-full" onClick={onNewReservation} variant="outline">
-            Fazer nova reserva
+          <Button className="w-full" onClick={handleSecondaryAction} variant="outline">
+            {secondaryActionLabel}
           </Button>
         </div>
       </section>

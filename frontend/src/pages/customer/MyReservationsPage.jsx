@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { EmptyState } from "../../components/common/EmptyState";
 import { ErrorState } from "../../components/common/ErrorState";
 import { LoadingState } from "../../components/common/LoadingState";
 import { PageHeader } from "../../components/layout/PageHeader";
 import { ReservationCard } from "../../components/reservation/ReservationCard";
+import { ReservationConfirmationModal } from "../../components/reservation/ReservationConfirmationModal";
 import { reservationService } from "../../services/reservationService";
 import { useReservationFilters } from "../../hooks/useReservationFilters";
 
 export function MyReservationsPage() {
+  const navigate = useNavigate();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [reservations, setReservations] = useState([]);
+  const [cancelledReservation, setCancelledReservation] = useState(null);
   const { filteredReservations, statusFilter, setStatusFilter } = useReservationFilters(reservations);
 
   useEffect(() => {
@@ -29,6 +33,7 @@ export function MyReservationsPage() {
 
   async function cancelReservation(id) {
     setError("");
+    setCancelledReservation(null);
 
     try {
       const cancelledReservation = await reservationService.cancel(id);
@@ -37,6 +42,7 @@ export function MyReservationsPage() {
           reservation.id === id ? cancelledReservation : reservation,
         ),
       );
+      setCancelledReservation(cancelledReservation);
     } catch (cancelError) {
       setError(cancelError.response?.data?.detail || "Nao foi possivel cancelar a reserva.");
     }
@@ -73,6 +79,16 @@ export function MyReservationsPage() {
           ))
         )}
       </div>
+      <ReservationConfirmationModal
+        message="Sua reserva foi cancelada com sucesso."
+        onClose={() => setCancelledReservation(null)}
+        onPrimaryAction={() => navigate("/reservations/new")}
+        onSecondaryAction={() => setCancelledReservation(null)}
+        primaryActionLabel="Fazer nova reserva"
+        reservation={cancelledReservation}
+        secondaryActionLabel="Fechar"
+        title="Reserva cancelada!"
+      />
     </>
   );
 }
