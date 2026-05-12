@@ -16,7 +16,7 @@ class Settings(BaseModel):
         default=60,
         alias="ACCESS_TOKEN_EXPIRE_MINUTES",
     )
-    cors_origins: str = Field(default="http://localhost:5173", alias="CORS_ORIGINS")
+    cors_origins: str = Field(min_length=1, alias="CORS_ORIGINS")
 
     @property
     def allowed_origins(self) -> list[str]:
@@ -47,6 +47,6 @@ def get_settings() -> Settings:
         "ACCESS_TOKEN_EXPIRE_MINUTES": int(
             os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"),
         ),
-        "CORS_ORIGINS": os.getenv("CORS_ORIGINS", "http://localhost:5173"),
+        "CORS_ORIGINS": os.getenv("CORS_ORIGINS", ""),
     }
     return Settings.model_validate(values)
