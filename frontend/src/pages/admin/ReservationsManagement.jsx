@@ -85,7 +85,7 @@ export function ReservationsManagement() {
             <tr key={reservation.id}>
               <td className="px-4 py-3 font-semibold text-ink-900">{reservation.customerName}</td>
               <td className="px-4 py-3 text-ink-500">Mesa {reservation.tableNumber}</td>
-              <td className="px-4 py-3 text-ink-500">{reservation.date} {reservation.time}</td>
+              <td className="px-4 py-3 text-ink-500">{reservation.date} {reservation.time} as {reservation.endTime}</td>
               <td className="px-4 py-3 text-ink-500">{reservation.partySize}</td>
               <td className="px-4 py-3"><ReservationStatusBadge status={reservation.status} /></td>
               <td className="px-4 py-3">

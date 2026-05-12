@@ -31,7 +31,7 @@ export function LoginPage() {
       <main className="mx-auto flex max-w-xl flex-col px-4 py-12 sm:px-6">
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-ink-900">Entrar como cliente</h1>
-          <p className="mt-2 text-sm text-ink-500">Use cliente@restaurante.com / 123456.</p>
+          <p className="mt-2 text-sm text-ink-500">Entre com suas credenciais para acessar sua conta.</p>
           {error && <div className="mt-4"><ErrorState message={error} /></div>}
           <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
             <TextInput id="email" label="Email" name="email" required type="email" />

@@ -17,7 +17,7 @@ DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST/DATABASE?sslmode=require
 JWT_SECRET=replace-with-a-long-random-secret
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=https://your-frontend-domain.example
 ```
 
 O arquivo `.env` deve permanecer fora do Git.
@@ -46,10 +46,9 @@ Este projeto ja inclui uma primeira migration versionada em `alembic/versions`.
 python scripts/seed.py
 ```
 
-Credenciais criadas apenas para desenvolvimento:
-
-- Admin: `admin@restaurante.com` / `admin123`
-- Cliente: `cliente@restaurante.com` / `123456`
+Para criar usuarios iniciais, preencha localmente `SEED_ADMIN_EMAIL`,
+`SEED_ADMIN_PASSWORD`, `SEED_CUSTOMER_EMAIL` e `SEED_CUSTOMER_PASSWORD`.
+Sem essas variaveis, o seed cria apenas mesas e horarios padrao.
 
 ## Iniciar API
 
@@ -57,7 +56,7 @@ Credenciais criadas apenas para desenvolvimento:
 uvicorn app.main:app --reload
 ```
 
-Documentacao interativa:
+Documentacao interativa local:
 
 - `http://127.0.0.1:8000/docs`
 
@@ -102,16 +101,14 @@ O delete de reservas e cancelamento logico: a reserva muda para `CANCELLED`.
 
 ### Disponibilidade
 
-- `GET /availability?date=YYYY-MM-DD&time=HH:mm&partySize=number`
+- `GET /availability?date=YYYY-MM-DD&time=HH:mm&durationMinutes=90&partySize=number`
 
-A disponibilidade e calculada no backend considerando mesas `ACTIVE`, capacidade minima e ausencia de reserva `CONFIRMED` no mesmo dia e horario.
+A disponibilidade e calculada no backend considerando mesas `ACTIVE`, capacidade minima e ausencia de reserva `CONFIRMED` com sobreposicao no intervalo solicitado.
 
 ## Integracao futura com React
 
 Configure o frontend com:
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=https://your-backend-domain.example
 ```
-
-Depois substitua os mocks em `frontend/src/services` por chamadas reais aos endpoints acima.

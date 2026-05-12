@@ -41,7 +41,10 @@ def create_reservation(
     user_id: int,
     reservation_data: ReservationCreate,
 ) -> Reservation:
-    reservation = Reservation(user_id=user_id, **reservation_data.model_dump())
+    reservation = Reservation(
+        user_id=user_id,
+        **reservation_data.model_dump(exclude={"duration_minutes"}),
+    )
     db.add(reservation)
     db.commit()
     db.refresh(reservation)
@@ -74,12 +77,14 @@ def has_confirmed_reservation_conflict(
     table_id: int,
     reservation_date: date,
     start_time: time,
+    end_time: time,
     exclude_reservation_id: int | None = None,
 ) -> bool:
     statement = select(Reservation.id).where(
         Reservation.table_id == table_id,
         Reservation.reservation_date == reservation_date,
-        Reservation.start_time == start_time,
+        Reservation.start_time < end_time,
+        Reservation.end_time > start_time,
         Reservation.status == ReservationStatus.CONFIRMED,
     )
 

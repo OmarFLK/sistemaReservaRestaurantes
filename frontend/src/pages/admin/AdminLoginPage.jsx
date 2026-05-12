@@ -34,7 +34,7 @@ export function AdminLoginPage() {
       <section className="w-full max-w-md rounded-lg bg-white p-6 shadow-soft">
         <p className="text-sm font-semibold text-brand-700">Painel administrativo</p>
         <h1 className="mt-2 text-2xl font-bold text-ink-900">Entrar como admin</h1>
-        <p className="mt-2 text-sm text-ink-500">Use admin@restaurante.com / admin123.</p>
+        <p className="mt-2 text-sm text-ink-500">Entre com suas credenciais administrativas para acessar o painel.</p>
         {error && <div className="mt-4"><ErrorState message={error} /></div>}
         <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
           <TextInput id="email" label="Email" name="email" required type="email" />

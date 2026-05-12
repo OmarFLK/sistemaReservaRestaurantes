@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, time
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -15,8 +15,14 @@ from app.repositories.reservation_repository import (
     mark_reservation_cancelled,
     update_reservation_fields,
 )
+from app.repositories.restaurant_hour_repository import get_restaurant_hour_by_day
 from app.repositories.table_repository import get_table_by_id
-from app.schemas.reservation import AdminReservationUpdate, ReservationCreate, ReservationUpdate
+from app.schemas.reservation import (
+    AdminReservationUpdate,
+    ReservationCreate,
+    ReservationUpdate,
+    add_minutes_to_time,
+)
 from app.services.audit_service import (
     record_audit_log,
     reservation_audit_data,
@@ -64,7 +70,7 @@ def update_user_reservation(
     updated_reservation = update_reservation_fields(
         db,
         reservation,
-        reservation_data.model_dump(exclude_unset=True),
+        build_reservation_update_payload(reservation, reservation_data),
     )
     record_audit_log(
         db,
@@ -119,7 +125,11 @@ def update_admin_reservation(
         )
 
     old_data = reservation_audit_data(reservation)
-    updated_reservation = update_reservation_fields(db, reservation, update_values)
+    updated_reservation = update_reservation_fields(
+        db,
+        reservation,
+        build_reservation_update_payload(reservation, reservation_data),
+    )
     record_audit_log(
         db,
         action="RESERVATION_UPDATED",
@@ -193,16 +203,28 @@ def validate_reservation_rules(
             detail="Party size exceeds selected table capacity.",
         )
 
+    schedule = get_restaurant_hour_by_day(db, reservation_data.reservation_date.weekday())
+    if schedule and (
+        not schedule.is_open
+        or reservation_data.start_time < schedule.opening_time
+        or reservation_data.end_time > schedule.closing_time
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reservation time range is outside restaurant opening hours.",
+        )
+
     if has_confirmed_reservation_conflict(
         db,
         table_id=reservation_data.table_id,
         reservation_date=reservation_data.reservation_date,
         start_time=reservation_data.start_time,
+        end_time=reservation_data.end_time,
         exclude_reservation_id=exclude_reservation_id,
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Selected table already has a confirmed reservation at this time.",
+            detail="Selected table already has a confirmed reservation in this time range.",
         )
 
 
@@ -226,4 +248,42 @@ def build_updated_reservation_values(
         "party_size": reservation.party_size,
     }
     values.update(reservation_data.model_dump(exclude_unset=True))
+    values = normalize_reservation_values(values)
+    values.pop("duration_minutes", None)
     return values
+
+
+def build_reservation_update_payload(
+    reservation: Reservation,
+    reservation_data: ReservationUpdate,
+) -> dict[str, object]:
+    values = reservation_data.model_dump(exclude_unset=True)
+
+    if values.get("duration_minutes") is not None:
+        start_time = values.get("start_time", reservation.start_time)
+        values["end_time"] = add_minutes_to_time(start_time, values["duration_minutes"])
+    elif "start_time" in values and "end_time" not in values:
+        values["end_time"] = add_minutes_to_time(
+            values["start_time"],
+            get_duration_minutes(reservation.start_time, reservation.end_time),
+        )
+
+    values.pop("duration_minutes", None)
+    return values
+
+
+def normalize_reservation_values(values: dict[str, object]) -> dict[str, object]:
+    if values.get("duration_minutes") is not None:
+        values["end_time"] = add_minutes_to_time(
+            values["start_time"],
+            values["duration_minutes"],
+        )
+
+    return values
+
+
+def get_duration_minutes(start_time: time, end_time: time) -> int:
+    start_datetime = datetime.combine(date(2026, 1, 1), start_time)
+    end_datetime = datetime.combine(date(2026, 1, 1), end_time)
+    duration = end_datetime - start_datetime
+    return max(1, int(duration.total_seconds() // 60))

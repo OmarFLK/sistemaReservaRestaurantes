@@ -3,6 +3,13 @@ import { SelectInput } from "./SelectInput";
 import { TextInput } from "./TextInput";
 
 const timeOptions = ["18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30"];
+const durationOptions = [
+  { label: "1 hora", value: 60 },
+  { label: "1h30", value: 90 },
+  { label: "2 horas", value: 120 },
+  { label: "2h30", value: 150 },
+  { label: "3 horas", value: 180 },
+];
 
 export function ReservationForm({ initialValues = {}, onSubmit, submitLabel }) {
   function handleSubmit(event) {
@@ -13,7 +20,7 @@ export function ReservationForm({ initialValues = {}, onSubmit, submitLabel }) {
 
   return (
     <form className="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm" onSubmit={handleSubmit}>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <TextInput
           defaultValue={initialValues.date}
           id="date"
@@ -27,6 +34,18 @@ export function ReservationForm({ initialValues = {}, onSubmit, submitLabel }) {
           {timeOptions.map((time) => (
             <option key={time} value={time}>
               {time}
+            </option>
+          ))}
+        </SelectInput>
+        <SelectInput
+          defaultValue={initialValues.durationMinutes || 90}
+          id="durationMinutes"
+          label="Duracao"
+          name="durationMinutes"
+        >
+          {durationOptions.map((duration) => (
+            <option key={duration.value} value={duration.value}>
+              {duration.label}
             </option>
           ))}
         </SelectInput>

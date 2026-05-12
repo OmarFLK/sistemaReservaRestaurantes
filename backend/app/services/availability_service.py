@@ -6,6 +6,7 @@ from app.models.restaurant_table import RestaurantTable, TableStatus
 from app.repositories.reservation_repository import has_confirmed_reservation_conflict
 from app.repositories.restaurant_hour_repository import get_restaurant_hour_by_day
 from app.repositories.table_repository import list_tables
+from app.schemas.reservation import DURATION_OPTIONS_MINUTES, add_minutes_to_time
 
 
 def list_available_tables(
@@ -13,14 +14,19 @@ def list_available_tables(
     *,
     reservation_date: date,
     start_time: time,
+    duration_minutes: int,
     party_size: int,
 ) -> list[RestaurantTable]:
+    if duration_minutes not in DURATION_OPTIONS_MINUTES:
+        return []
+
+    end_time = add_minutes_to_time(start_time, duration_minutes)
     schedule = get_restaurant_hour_by_day(db, reservation_date.weekday())
 
     if schedule and (
         not schedule.is_open
         or start_time < schedule.opening_time
-        or start_time >= schedule.closing_time
+        or end_time > schedule.closing_time
     ):
         return []
 
@@ -38,5 +44,6 @@ def list_available_tables(
             table_id=table.id,
             reservation_date=reservation_date,
             start_time=start_time,
+            end_time=end_time,
         )
     ]

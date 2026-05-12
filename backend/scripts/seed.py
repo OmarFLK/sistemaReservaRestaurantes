@@ -1,4 +1,5 @@
 from datetime import time
+import os
 import sys
 from pathlib import Path
 
@@ -15,22 +16,29 @@ from app.repositories.user_repository import create_user, get_user_by_email
 
 
 def seed_users() -> None:
+    admin_email = os.getenv("SEED_ADMIN_EMAIL")
+    admin_password = os.getenv("SEED_ADMIN_PASSWORD")
+    admin_name = os.getenv("SEED_ADMIN_NAME", "Administrador")
+    customer_email = os.getenv("SEED_CUSTOMER_EMAIL")
+    customer_password = os.getenv("SEED_CUSTOMER_PASSWORD")
+    customer_name = os.getenv("SEED_CUSTOMER_NAME", "Cliente")
+
     with create_db_session() as db:
-        if not get_user_by_email(db, "admin@restaurante.com"):
+        if admin_email and admin_password and not get_user_by_email(db, admin_email):
             create_user(
                 db,
-                name="Administrador",
-                email="admin@restaurante.com",
-                password_hash=hash_password("admin123"),
+                name=admin_name,
+                email=admin_email,
+                password_hash=hash_password(admin_password),
                 role=UserRole.ADMIN,
             )
 
-        if not get_user_by_email(db, "cliente@restaurante.com"):
+        if customer_email and customer_password and not get_user_by_email(db, customer_email):
             create_user(
                 db,
-                name="Cliente Teste",
-                email="cliente@restaurante.com",
-                password_hash=hash_password("123456"),
+                name=customer_name,
+                email=customer_email,
+                password_hash=hash_password(customer_password),
                 role=UserRole.CUSTOMER,
             )
 

@@ -17,7 +17,7 @@ export function ReservationCard({ reservation, onCancel }) {
               <CalendarDays size={16} /> {reservation.date}
             </span>
             <span className="flex items-center gap-2">
-              <Clock size={16} /> {reservation.time}
+              <Clock size={16} /> {reservation.time} as {reservation.endTime}
             </span>
             <span className="flex items-center gap-2">
               <Users size={16} /> {reservation.partySize} pessoas

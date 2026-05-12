@@ -14,9 +14,9 @@ export const reservationService = {
     const reservations = await this.listMine();
     return reservations.find((reservation) => String(reservation.id) === String(id));
   },
-  async listAvailableTables({ date, time, partySize }) {
+  async listAvailableTables({ date, time, partySize, durationMinutes }) {
     const response = await api.get("/availability", {
-      params: { date, time, partySize },
+      params: { date, time, partySize, durationMinutes },
     });
     return response.data.map(mapApiTable);
   },

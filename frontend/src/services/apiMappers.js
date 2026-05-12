@@ -48,6 +48,7 @@ export function mapApiReservation(apiReservation) {
     date: apiReservation.reservation_date,
     time: formatTime(apiReservation.start_time),
     endTime: formatTime(apiReservation.end_time),
+    durationMinutes: getDurationMinutes(apiReservation.start_time, apiReservation.end_time),
     partySize: apiReservation.party_size,
     status: apiReservation.status,
     notes: "",
@@ -122,7 +123,7 @@ export function toReservationPayload(formValues) {
     table_id: Number(formValues.tableId || formValues.table_id),
     reservation_date: formValues.date,
     start_time: normalizeTime(formValues.time),
-    end_time: normalizeTime(addNinetyMinutes(formValues.time)),
+    duration_minutes: Number(formValues.durationMinutes || formValues.duration_minutes || 90),
     party_size: Number(formValues.partySize || formValues.party_size),
   };
 }
@@ -143,10 +144,15 @@ function formatTime(time) {
   return time?.slice(0, 5) || "";
 }
 
-function addNinetyMinutes(time) {
+function getDurationMinutes(startTime, endTime) {
+  const startDate = getDateForTime(startTime);
+  const endDate = getDateForTime(endTime);
+  return Math.max(0, Math.round((endDate - startDate) / 60000));
+}
+
+function getDateForTime(time) {
   const [hours, minutes] = time.split(":").map(Number);
-  const date = new Date(2026, 0, 1, hours, minutes + 90);
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  return new Date(2026, 0, 1, hours, minutes);
 }
 
 const dayNames = ["Segunda", "Terca", "Quarta", "Quinta", "Sexta", "Sabado", "Domingo"];

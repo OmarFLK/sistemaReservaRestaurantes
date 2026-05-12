@@ -26,11 +26,13 @@ def read_availability(
     reservation_date: Annotated[date, Query(alias="date")],
     start_time: Annotated[time, Query(alias="time")],
     party_size: Annotated[int, Query(alias="partySize", gt=0)],
+    duration_minutes: Annotated[int, Query(alias="durationMinutes", ge=1)] = 90,
 ) -> list[RestaurantTablePublic]:
     return list_available_tables(
         db,
         reservation_date=reservation_date,
         start_time=start_time,
+        duration_minutes=duration_minutes,
         party_size=party_size,
     )
 
