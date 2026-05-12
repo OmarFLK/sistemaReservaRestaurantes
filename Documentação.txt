@@ -1,0 +1,415 @@
+DOCUMENTAÇÃO DO PROJETO - RESTAURANT RESERVATION SYSTEM
+
+1. Visão geral
+
+O Restaurant Reservation System é um sistema full-stack para gerenciamento de reservas em restaurantes.
+
+Ele permite que clientes criem, editem, visualizem e cancelem reservas de mesas, enquanto administradores controlam mesas, horários de funcionamento, clientes, reservas e logs de auditoria por meio de um painel administrativo protegido.
+
+O projeto foi desenvolvido com separação clara entre frontend, backend e banco de dados, seguindo uma arquitetura simples de manter e preparada para produção.
+
+
+2. Onde foi feito o deploy
+
+O deploy do projeto foi pensado em três partes:
+
+Frontend:
+- Hospedado na Vercel.
+- Aplicação React gerada com Vite.
+- Consome a API através da variável de ambiente VITE_API_URL.
+
+Backend:
+- Hospedado na Render.
+- API desenvolvida em FastAPI.
+- Usa variáveis de ambiente obrigatórias como DATABASE_URL, JWT_SECRET e CORS_ORIGINS.
+
+Banco de dados:
+- Hospedado na Neon.
+- Banco PostgreSQL.
+- Estrutura controlada por migrations do Alembic.
+
+
+3. Tecnologias utilizadas
+
+Frontend:
+- React
+- Vite
+- TailwindCSS
+- React Router DOM
+- Axios
+- Lucide React
+
+Backend:
+- Python
+- FastAPI
+- SQLAlchemy
+- Alembic
+- Pydantic
+- JWT
+- Passlib/Bcrypt
+
+Banco:
+- PostgreSQL
+- Neon
+- Alembic para migrations
+
+
+4. Como o projeto foi feito
+
+O projeto foi construído como uma aplicação full-stack dividida em duas aplicações principais:
+
+- frontend/: interface web usada por clientes e administradores.
+- backend/: API REST responsável por autenticação, regras de negócio, persistência e segurança.
+
+O frontend foi desenvolvido com React, usando componentes reutilizáveis, layouts separados para cliente e administrador, rotas protegidas e serviços centralizados para comunicação com a API.
+
+O backend foi desenvolvido em FastAPI, com uma divisão em camadas:
+
+- routers: recebem as requisições HTTP e definem os endpoints.
+- services: concentram as regras de negócio.
+- repositories: concentram o acesso ao banco.
+- schemas: validam entrada e saída com Pydantic.
+- models: definem as tabelas com SQLAlchemy.
+- core: reúne configuração, banco de dados e segurança.
+
+Essa separação ajuda o projeto a crescer sem misturar regra de negócio com detalhes de HTTP ou SQL.
+
+
+5. Estrutura de pastas
+
+backend/
+  app/
+    core/
+      config.py
+      database.py
+      security.py
+    models/
+      user.py
+      restaurant_table.py
+      reservation.py
+      restaurant_hour.py
+      audit_log.py
+    repositories/
+      user_repository.py
+      table_repository.py
+      reservation_repository.py
+      restaurant_hour_repository.py
+      customer_repository.py
+      audit_log_repository.py
+    routers/
+      auth.py
+      tables.py
+      reservations.py
+      admin.py
+      health.py
+    schemas/
+      auth.py
+      user.py
+      table.py
+      reservation.py
+      restaurant_hour.py
+      dashboard.py
+      audit_log.py
+      customer.py
+    services/
+      auth_service.py
+      reservation_service.py
+      availability_service.py
+      restaurant_hour_service.py
+      admin_dashboard_service.py
+      audit_service.py
+  alembic/
+  scripts/
+  tests/
+
+frontend/
+  src/
+    components/
+      admin/
+      common/
+      forms/
+      layout/
+      reservation/
+    contexts/
+    hooks/
+    pages/
+      admin/
+      customer/
+      public/
+    routes/
+    services/
+    styles/
+
+
+6. Funcionalidades do cliente
+
+O cliente consegue:
+
+- criar conta;
+- fazer login;
+- acessar painel próprio;
+- buscar mesas disponíveis por data, horário, duração e quantidade de pessoas;
+- criar reserva;
+- visualizar suas reservas;
+- ver detalhes de uma reserva;
+- editar reserva;
+- cancelar reserva;
+- receber modal visual de confirmação ao criar reserva;
+- receber modal visual de confirmação ao cancelar reserva.
+
+O fluxo de reserva foi feito para ser intuitivo:
+
+1. O cliente escolhe data, horário, duração e número de pessoas.
+2. O frontend consulta /availability.
+3. O backend retorna apenas mesas realmente disponíveis.
+4. O cliente escolhe uma mesa.
+5. O frontend envia a criação para /reservations.
+6. O backend valida tudo novamente.
+7. Após sucesso real da API, o frontend exibe o modal de confirmação.
+
+
+7. Funcionalidades do administrador
+
+O administrador consegue:
+
+- fazer login administrativo;
+- acessar dashboard;
+- visualizar indicadores operacionais;
+- gerenciar reservas;
+- alterar status de reservas;
+- cancelar reservas;
+- gerenciar mesas;
+- criar, editar e desativar mesas;
+- gerenciar horários de funcionamento;
+- consultar clientes;
+- consultar logs de auditoria.
+
+As rotas administrativas são protegidas no backend e no frontend. No backend, o acesso exige usuário autenticado com role ADMIN.
+
+
+8. Regra de reservas por intervalo
+
+A regra mais importante do sistema é a disponibilidade por intervalo real de ocupação.
+
+Antes, uma mesa podia ficar bloqueada apenas no horário exato da reserva. Agora o sistema considera o início e o fim da reserva.
+
+Ao reservar, o cliente informa:
+
+- data;
+- horário inicial;
+- duração estimada;
+- quantidade de pessoas.
+
+O backend calcula e valida o horário final.
+
+Exemplo:
+
+Horário inicial: 21:00
+Duração: 90 minutos
+Horário final: 22:30
+
+Nesse caso, a mesa não pode aparecer como disponível às 21:00, 21:30 ou 22:00. Ela só volta a aparecer a partir das 22:30.
+
+A regra de conflito implementada é:
+
+existing.start_time < new.end_time
+AND
+existing.end_time > new.start_time
+
+Somente reservas com status CONFIRMED bloqueiam disponibilidade. Reservas CANCELLED, COMPLETED ou NO_SHOW não bloqueiam novas reservas.
+
+
+9. Backend
+
+O backend é uma API REST em FastAPI.
+
+Principais responsabilidades:
+
+- autenticar usuários;
+- emitir tokens JWT;
+- proteger rotas privadas;
+- validar dados recebidos;
+- calcular disponibilidade real;
+- impedir conflitos de reserva;
+- persistir dados no PostgreSQL;
+- registrar logs de auditoria;
+- expor endpoints para cliente e administrador.
+
+Endpoints principais:
+
+Auth:
+- POST /auth/register
+- POST /auth/login
+- GET /auth/me
+
+Mesas:
+- GET /tables
+- GET /tables/{id}
+- POST /admin/tables
+- PUT /admin/tables/{id}
+- DELETE /admin/tables/{id}
+
+Reservas:
+- GET /availability
+- GET /reservations/my
+- POST /reservations
+- PUT /reservations/{id}
+- DELETE /reservations/{id}
+
+Admin:
+- GET /admin/dashboard
+- GET /admin/reservations
+- PUT /admin/reservations/{id}
+- DELETE /admin/reservations/{id}
+- GET /admin/customers
+- GET /admin/schedules
+- POST /admin/schedules
+- PUT /admin/schedules/{id}
+- DELETE /admin/schedules/{id}
+- GET /admin/logs
+
+
+10. Frontend
+
+O frontend é uma aplicação React com Vite.
+
+Principais responsabilidades:
+
+- renderizar páginas públicas, do cliente e do administrador;
+- controlar autenticação local;
+- proteger rotas;
+- consumir a API via Axios;
+- mapear dados da API para o formato usado pela interface;
+- exibir estados de carregamento, erro e vazio;
+- fornecer formulários para login, cadastro, reservas e administração;
+- exibir modais profissionais para confirmação de reserva criada e reserva cancelada.
+
+As chamadas HTTP ficam centralizadas em frontend/src/services.
+
+O arquivo api.js configura a base da API com VITE_API_URL e adiciona o token JWT nas requisições autenticadas.
+
+Os arquivos de mapper, como apiMappers.js, transformam nomes do backend em nomes mais convenientes para o frontend.
+
+
+11. Banco de dados
+
+O banco é PostgreSQL na Neon.
+
+Principais tabelas:
+
+users:
+- usuários clientes e administradores;
+- email único;
+- senha armazenada como hash;
+- role CUSTOMER ou ADMIN.
+
+restaurant_tables:
+- mesas do restaurante;
+- número da mesa;
+- capacidade;
+- status ACTIVE, INACTIVE ou MAINTENANCE.
+
+reservations:
+- reservas dos clientes;
+- usuário;
+- mesa;
+- data;
+- horário inicial;
+- horário final;
+- quantidade de pessoas;
+- status.
+
+restaurant_hours:
+- horários de funcionamento por dia da semana.
+
+audit_logs:
+- histórico de ações administrativas e eventos importantes.
+
+As migrations ficam em backend/alembic/versions.
+
+
+12. Segurança
+
+O projeto evita expor segredos no código.
+
+Pontos de segurança:
+
+- JWT_SECRET obrigatório no backend;
+- DATABASE_URL obrigatório no backend;
+- VITE_API_URL obrigatório no frontend;
+- CORS configurado por variável CORS_ORIGINS;
+- senhas armazenadas como hash;
+- rotas administrativas protegidas por role ADMIN;
+- credenciais de demonstração não aparecem na interface;
+- logs não registram senhas.
+
+
+13. Seed
+
+O script backend/scripts/seed.py cria dados iniciais de forma idempotente.
+
+Ele pode criar:
+
+- mesas padrão;
+- horários padrão;
+- usuários iniciais, somente quando variáveis SEED_* forem preenchidas.
+
+Isso evita deixar email e senha de demonstração fixos no repositório.
+
+
+14. Testes e validação
+
+O projeto possui teste automatizado para a regra de intervalo de reserva.
+
+O teste cobre:
+
+- reserva das 21:00 às 22:30;
+- mesa bloqueada às 21:30;
+- mesa bloqueada às 22:00;
+- mesa liberada às 22:30;
+- conflito retornando erro;
+- reserva cancelada não bloqueando disponibilidade.
+
+Comandos usados no backend:
+
+python -m compileall app scripts alembic
+python -m pip check
+alembic current
+alembic heads
+python -m unittest discover tests
+
+Comandos usados no frontend:
+
+npm run lint
+npm run build
+
+
+15. Variáveis de ambiente
+
+Backend:
+
+DATABASE_URL
+JWT_SECRET
+JWT_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES
+CORS_ORIGINS
+
+Frontend:
+
+VITE_API_URL
+
+Seed opcional:
+
+SEED_ADMIN_NAME
+SEED_ADMIN_EMAIL
+SEED_ADMIN_PASSWORD
+SEED_CUSTOMER_NAME
+SEED_CUSTOMER_EMAIL
+SEED_CUSTOMER_PASSWORD
+
+
+16. Resumo final
+
+O projeto é uma aplicação completa de reservas para restaurante, com frontend moderno, backend robusto, banco relacional, autenticação JWT, rotas protegidas, painel administrativo, auditoria, regra real de disponibilidade por intervalo e deploy dividido entre Vercel, Render e Neon.
+
+Ele foi feito para demonstrar integração full-stack de ponta a ponta, com preocupação em organização de código, segurança, experiência do usuário e funcionamento em ambiente de produção.
