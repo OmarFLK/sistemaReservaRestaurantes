@@ -20,7 +20,7 @@ class Settings(BaseModel):
 
     @property
     def allowed_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return parse_cors_origins(self.cors_origins)
 
     @property
     def sqlalchemy_database_url(self) -> str:
@@ -36,6 +36,18 @@ def normalize_postgres_driver(database_url: str) -> str:
         )
 
     return database_url
+
+
+def parse_cors_origins(cors_origins: str) -> list[str]:
+    origins = []
+
+    for raw_origin in cors_origins.split(","):
+        origin = raw_origin.strip().strip("'\"").rstrip("/")
+
+        if origin:
+            origins.append(origin)
+
+    return origins
 
 
 @lru_cache
