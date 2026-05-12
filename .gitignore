@@ -1,0 +1,57 @@
+# Environment files
+.env
+.env.*
+backend/.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+backend/venv/
+env/
+
+# FastAPI / backend runtime
+*.log
+logs/
+tmp/
+temp/
+
+# Node / React / Vite
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local databases and generated files
+*.sqlite
+*.sqlite3
+*.db
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Deployment caches
+.vercel/
+.render/
